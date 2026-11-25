@@ -1,0 +1,21 @@
+{
+  "users": [
+    {
+      "id": "5bd04cd3-0be0-4970-bf11-fae1eeb88948",
+      "name": "Moni Chanda",
+      "email": "monichanda570@gmail.com",
+      "passwordHash": "$2b$12$VrEnmTC61jwF20Mbv3VLp..jr.3PD9SDB7Q1Xtrb6UZc8vDaYea9C",
+      "role": "user",
+      "createdAt": "2026-11-25T06:43:48.537Z"
+    }
+  ],
+  "conversations": [],
+  "usage": [
+    {
+      "userId": "5bd04cd3-0be0-4970-bf11-fae1eeb88948",
+      "day": "2026-11-25",
+      "chats": 1,
+      "images": 0
+    }
+  ]
+}

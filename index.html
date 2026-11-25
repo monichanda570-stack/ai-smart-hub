@@ -1,0 +1,56 @@
+<!doctype html><html lang="bn"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b1020">
+<title>AI Smart Hub — Free AI Workspace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="/styles.css">
+</head><body>
+<div id="authView" class="auth-view">
+ <div class="auth-brand"><span class="brand-mark">✳</span> AI <b>Smart Hub</b></div>
+ <div class="auth-card">
+  <div class="auth-kicker">YOUR FREE AI WORKSPACE</div><h1 id="authTitle">AI Smart Hub-এ স্বাগতম</h1><p id="authSub">লগইন করুন অথবা নতুন অ্যাকাউন্ট তৈরি করুন।</p>
+  <div class="auth-tabs"><button id="loginTab" class="selected">লগইন</button><button id="registerTab">নতুন অ্যাকাউন্ট</button></div>
+  <form id="authForm">
+   <label id="nameLabel" class="hidden">আপনার নাম</label><input id="nameField" class="hidden" maxlength="50" placeholder="আপনার নাম">
+   <label>ইমেইল</label><input id="emailField" type="email" required maxlength="160" autocomplete="email" placeholder="you@example.com">
+   <label>পাসওয়ার্ড</label><input id="passwordField" type="password" required minlength="10" maxlength="100" autocomplete="current-password" placeholder="কমপক্ষে ১০ অক্ষর">
+   <label id="adminCodeLabel" class="hidden">Admin setup code (শুধু সাইট মালিকের জন্য)</label><input id="adminCodeField" class="hidden" type="password" autocomplete="off" placeholder="Admin setup code">
+   <button class="primary wide" id="authSubmit">লগইন করুন</button>
+  </form><div id="authError" class="error"></div>
+  <small class="privacy-note">আপনার API key এই ওয়েবসাইটের ব্রাউজারে দেখানো হয় না।</small>
+ </div>
+ <button class="lang-switch" id="authLang">English</button>
+</div>
+<div id="appView" class="app hidden">
+ <aside class="sidebar" id="sidebar">
+  <a class="brand" href="#"><span class="brand-mark">✳</span> AI <b>Smart Hub</b></a>
+  <button class="new-chat" id="newChat">＋ <span data-bn="নতুন চ্যাট" data-en="New chat">নতুন চ্যাট</span></button>
+  <div class="side-label">WORKSPACE</div>
+  <nav>
+   <button class="nav active" data-page="chat">◉ <span data-bn="AI Chat" data-en="AI Chat">AI Chat</span></button>
+   <button class="nav" data-page="image">▧ <span data-bn="Image Generator" data-en="Image Generator">Image Generator</span></button>
+   <button class="nav" data-page="writer">✎ <span data-bn="AI Writer" data-en="AI Writer">AI Writer</span></button>
+   <button class="nav" data-page="coding">⌘ <span data-bn="Coding Assistant" data-en="Coding Assistant">Coding Assistant</span></button>
+   <button class="nav" data-page="study">◇ <span data-bn="Study Tutor" data-en="Study Tutor">Study Tutor</span></button>
+   <button class="nav" data-page="summarize">▤ <span data-bn="Summarizer" data-en="Summarizer">Summarizer</span></button>
+  </nav>
+  <div class="side-label history-label">CHAT HISTORY</div><div id="historyList" class="history-list"></div>
+  <div class="side-footer"><div class="usage-box"><b data-bn="আজকের ফ্রি ব্যবহার" data-en="Today's free usage">আজকের ফ্রি ব্যবহার</b><div class="usage-line"><span id="usageText">0 / 25 chats</span><span id="imageUsage">0 / 2 images</span></div><div class="usage-track"><i id="usageBar"></i></div></div>
+   <button class="nav" id="languageBtn">文 <span data-bn="ভাষা: বাংলা" data-en="Language: English">ভাষা: বাংলা</span></button>
+   <button class="nav admin-link hidden" id="adminBtn">⚙ <span>Admin overview</span></button>
+   <div class="user-profile"><div class="avatar" id="avatar">U</div><div class="user-info"><b id="profileName">User</b><small id="profileEmail">user@email.com</small></div><button id="logoutBtn" title="Logout">↪</button></div>
+  </div>
+ </aside>
+ <main class="main">
+  <header class="topbar"><button id="mobileMenu" class="mobile-menu">☰</button><div class="crumb">AI Smart Hub <i>/</i> <b id="pageTitle">AI Chat</b></div><div class="provider-wrap"><label for="providerSelect">AI</label><select id="providerSelect"><option value="openai">OpenAI</option><option value="gemini">Google Gemini</option></select><span id="providerStatus" class="provider-status">●</span></div></header>
+  <section class="page active" id="page-chat"><div class="welcome" id="welcome"><div class="pill">✦ YOUR AI WORKSPACE</div><h1 data-bn="আজ কী তৈরি করবেন?" data-en="What will you create today?">আজ কী তৈরি করবেন?</h1><p data-bn="আপনার আইডিয়া লিখুন। AI Smart Hub আপনাকে শুরু করতে সাহায্য করবে।" data-en="Share an idea. AI Smart Hub will help you get started.">আপনার আইডিয়া লিখুন। AI Smart Hub আপনাকে শুরু করতে সাহায্য করবে।</p>
+   <div class="suggestions"><button data-prompt="আমার জন্য একটি আকর্ষণীয় ব্যবসায়িক পরিকল্পনা তৈরি করুন।">✧ <b>ব্যবসার পরিকল্পনা</b><small>নতুন আইডিয়াকে পরিকল্পনায় রূপ দিন</small></button><button data-prompt="একটি SEO-friendly বাংলা ব্লগ পোস্ট লিখুন: কৃত্রিম বুদ্ধিমত্তার ব্যবহার।">✎ <b>ব্লগ পোস্ট লিখুন</b><small>আকর্ষণীয় কনটেন্ট তৈরি করুন</small></button><button data-prompt="HTML, CSS ও JavaScript দিয়ে একটি responsive landing page তৈরি করুন।">⌘ <b>কোড তৈরি করুন</b><small>আপনার পরবর্তী প্রজেক্ট শুরু করুন</small></button><button data-prompt="Machine Learning সহজ উদাহরণসহ বুঝিয়ে দিন।">◇ <b>কঠিন বিষয় শিখুন</b><small>সহজ ভাষায় বুঝে নিন</small></button></div>
+  </div><div id="messages" class="messages"></div><div class="composer"><textarea id="chatInput" rows="1" placeholder="আপনার মেসেজ লিখুন..."></textarea><div class="composer-bottom"><span>AI ভুল করতে পারে। গুরুত্বপূর্ণ তথ্য যাচাই করুন।</span><button id="sendBtn" class="primary">পাঠান ↑</button></div></div></section>
+  <section class="page tool-page" id="page-image"><div class="tool-heading"><div class="tool-icon">▧</div><div><small>AI CREATIVE STUDIO</small><h1>AI Image Generator</h1><p>আপনার কল্পনার ছবি তৈরি করুন।</p></div></div><div class="panel"><label>ছবির বর্ণনা লিখুন</label><textarea id="imagePrompt" rows="4" placeholder="A cinematic photo of a cozy cabin beside a mountain lake at sunrise..."></textarea><button id="imageBtn" class="primary">✦ ছবি তৈরি করুন</button></div><div id="imageOutput"></div></section>
+  <section class="page tool-page" id="page-writer"><div class="tool-heading"><div class="tool-icon">✎</div><div><small>AI CONTENT STUDIO</small><h1>AI Writer</h1><p>ব্লগ, ইমেইল ও কনটেন্ট তৈরি করুন।</p></div></div><div class="panel"><label>কী লিখতে চান?</label><textarea id="writerInput" rows="6" placeholder="বিষয়, পাঠক এবং লেখার ধরন সম্পর্কে বলুন..."></textarea><button class="primary mode-run" data-mode="writer">খসড়া তৈরি করুন</button></div></section>
+  <section class="page tool-page" id="page-coding"><div class="tool-heading"><div class="tool-icon">⌘</div><div><small>AI DEVELOPER DESK</small><h1>Coding Assistant</h1><p>কোড লিখুন, বাগ খুঁজুন ও শিখুন।</p></div></div><div class="panel"><label>আপনার coding task</label><textarea id="codingInput" rows="6" placeholder="JavaScript দিয়ে একটি responsive calculator তৈরি করুন..."></textarea><button class="primary mode-run" data-mode="coding">কোড তৈরি করুন</button></div></section>
+  <section class="page tool-page" id="page-study"><div class="tool-heading"><div class="tool-icon">◇</div><div><small>PERSONAL AI TUTOR</small><h1>Study Tutor</h1><p>কঠিন বিষয় সহজভাবে শিখুন।</p></div></div><div class="panel"><label>কোন বিষয়টি শিখতে চান?</label><textarea id="studyInput" rows="6" placeholder="Photosynthesis সহজ করে বুঝিয়ে দিন..."></textarea><button class="primary mode-run" data-mode="study">শেখা শুরু করুন</button></div></section>
+  <section class="page tool-page" id="page-summarize"><div class="tool-heading"><div class="tool-icon">▤</div><div><small>AI READING ASSISTANT</small><h1>Text Summarizer</h1><p>বড় লেখার মূল বিষয়গুলো দ্রুত বুঝুন।</p></div></div><div class="panel"><label>লেখা পেস্ট করুন</label><textarea id="summaryInput" rows="8" placeholder="এখানে আপনার লেখা পেস্ট করুন..."></textarea><button class="primary mode-run" data-mode="summarize">সারাংশ তৈরি করুন</button></div></section>
+  <section class="page tool-page" id="page-admin"><div class="tool-heading"><div class="tool-icon">⚙</div><div><small>ADMIN CONTROL</small><h1>Admin Overview</h1><p>ব্যবহারকারী ও প্ল্যাটফর্মের অবস্থা।</p></div></div><div id="adminData" class="panel">Loading...</div></section>
+ </main>
+</div>
+<div id="toast" class="toast"></div><script src="/app.js"></script></body></html>
