@@ -25,9 +25,7 @@ const CHAT_LIMIT = Math.max(1, Number(process.env.DAILY_CHAT_LIMIT || 25));
 const IMAGE_LIMIT = Math.max(0, Number(process.env.DAILY_IMAGE_LIMIT || 2));
 
 if (JWT_SECRET.length < 32) 
-const dataDir = path.join(__dirname, "data");
-if (!fs.existsSync(dataDir)) { fs.mkdirSync(dataDir, { recursive: true }); }
-{
+
   console.error("SECURITY ERROR: Set JWT_SECRET in .env to a random secret at least 32 characters long.");
   process.exit(1);
 }
