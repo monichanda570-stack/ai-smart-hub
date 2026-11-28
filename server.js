@@ -10,13 +10,15 @@ import { Low } from "lowdb";
 import { JSONFile } from "lowdb/node";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
-
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(__dirname, "data");
-if (!fs.existsSync(dataDir)) { fs.mkdirSync(dataDir, { recursive: true }); }
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
 const JWT_SECRET = process.env.JWT_SECRET || "";
@@ -24,12 +26,12 @@ const isProd = process.env.NODE_ENV === "production";
 const CHAT_LIMIT = Math.max(1, Number(process.env.DAILY_CHAT_LIMIT || 25));
 const IMAGE_LIMIT = Math.max(0, Number(process.env.DAILY_IMAGE_LIMIT || 2));
 
-if (JWT_SECRET.length < 32) 
-
+if (JWT_SECRET.length < 32) {
   console.error("SECURITY ERROR: Set JWT_SECRET in .env to a random secret at least 32 characters long.");
   process.exit(1);
 }
-const adapter = new JSONFile(path.join(__dirname, "data", "db.json"));
+
+const adapter = new JSONFile(path.join(dataDir, "db.json"));
 const db = new Low(adapter, { users: [], conversations: [], usage: [] });
 await db.read();
 db.data ||= { users: [], conversations: [], usage: [] };
@@ -84,6 +86,7 @@ function providerAvailable(provider) {
 function systemPrompt(mode) {
   const prompts = {
     chat: "You are AI Smart Hub, a helpful, honest and accurate assistant. Reply in the same language as the user. If unsure, say so.",
+    support: "You are a polite, patient, and professional customer support agent. Listen carefully to customer issues and provide clear, helpful solutions in the user's language.",
     writer: "You are an expert writing assistant. Draft, rewrite, proofread and translate. Produce polished, ready-to-use content in the user's language.",
     coding: "You are a senior software engineer and patient coding tutor. Provide correct, secure code and concise explanations in the user's language.",
     study: "You are a patient tutor. Teach step by step with simple examples and check understanding. Reply in the user's language.",
@@ -91,21 +94,13 @@ function systemPrompt(mode) {
   };
   return prompts[mode] || prompts.chat;
 }
-function extractGeminiText(payload) {
-  if (typeof payload.output_text === "string") return payload.output_text;
-  const texts = [];
-  for (const step of payload.steps || []) {
-    for (const item of step.content || []) if (item.type === "text" && item.text) texts.push(item.text);
-  }
-  return texts.join("\n").trim();
-}
 async function generateText({ provider, model, mode, message, history }) {
   const instructions = systemPrompt(mode);
   const cleanHistory = history.slice(-12).map(m => ({ role: m.role, content: m.content.slice(0, 6000) }));
   if (provider === "openai") {
     if (!openai) throw new Error("OpenAI API Key সেট করা হয়নি।");
     const response = await openai.responses.create({
-      model: model || process.env.OPENAI_CHAT_MODEL || "gpt-5.5",
+      model: model || process.env.OPENAI_CHAT_MODEL || "gpt-4o-mini",
       instructions,
       input: [...cleanHistory, { role: "user", content: message }],
       max_output_tokens: 2500
@@ -115,24 +110,25 @@ async function generateText({ provider, model, mode, message, history }) {
   if (provider === "gemini") {
     const key = process.env.GEMINI_API_KEY;
     if (!key) throw new Error("Gemini API Key সেট করা হয়নি।");
-    const turns = [...cleanHistory, { role: "user", content: message }]
-      .map(m => `${m.role === "assistant" ? "Assistant" : "User"}: ${m.content}`).join("\n\n");
-    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+    const modelName = model || process.env.GEMINI_CHAT_MODEL || "gemini-2.5-flash";
+    const contents = [...cleanHistory, { role: "user", content: message }].map(m => ({
+      role: m.role === "assistant" ? "model" : "user",
+      parts: [{ text: m.content }]
+    }));
+    const response = await fetch(`https://googleapis.com{modelName}:generateContent?key=${key}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: model || process.env.GEMINI_CHAT_MODEL || "gemini-3.8-flash",
-        input: turns,
-        system_instruction: instructions,
-        store: false
+        systemInstruction: { parts: [{ text: instructions }] },
+        contents
       })
     });
     const payload = await response.json();
     if (!response.ok) {
       console.error("Gemini API error:", response.status, payload?.error?.message);
-      throw new Error("Gemini API অনুরোধ ব্যর্থ হয়েছে। API key, model access ও billing পরীক্ষা করুন।");
+      throw new Error("Gemini API অনুরোধ ব্যর্থ হয়েছে। API key ও model পরীক্ষা করুন।");
     }
-    return extractGeminiText(payload) || "দুঃখিত, কোনো উত্তর পাওয়া যায়নি।";
+    return payload?.candidates?.[0]?.content?.parts?.[0]?.text || "দুঃখিত, কোনো উত্তর পাওয়া যায়নি।";
   }
   throw new Error("অজানা AI provider।");
 }
@@ -170,115 +166,41 @@ app.post("/api/auth/login", authLimiter, async (req, res) => {
   const { email, password } = req.body || {};
   await readDb();
   const user = db.data.users.find(u => u.email === String(email || "").trim().toLowerCase());
-  if (!user || typeof password !== "string" || !(await bcrypt.compare(password, user.passwordHash))) return res.status(401).json({ error: "ইমেইল অথবা পাসওয়ার্ড সঠিক নয়।" });
+  if (!user || !(await bcrypt.compare(String(password || ""), user.passwordHash))) {
+    return res.status(401).json({ error: "ইমেইল বা পাসওয়ার্ড ভুল।" });
+  }
   setAuthCookie(res, user);
   res.json({ user: safeUser(user) });
 });
-app.post("/api/auth/logout", (req, res) => { res.clearCookie("ash_session", { path: "/" }); res.json({ ok: true }); });
-app.get("/api/me", authRequired, async (req, res) => {
+
+app.post("/api/auth/logout", (req, res) => {
+  res.clearCookie("ash_session", { path: "/" });
+  res.json({ ok: true });
+});
+
+app.get("/api/auth/me", authRequired, async (req, res) => {
   const user = await currentUser(req);
-  if (!user) return res.status(401).json({ error: "অ্যাকাউন্ট পাওয়া যায়নি।" });
+  if (!user) return res.status(401).json({ error: "ইউজার পাওয়া যায়নি।" });
   const usage = await usageFor(user.id);
-  res.json({ user: safeUser(user), usage, limits: { chats: CHAT_LIMIT, images: IMAGE_LIMIT } });
+  res.json({ user: safeUser(user), usage });
 });
 
 app.get("/api/conversations", authRequired, async (req, res) => {
-  const user = await currentUser(req); if (!user) return res.status(401).json({ error: "লগইন প্রয়োজন।" });
   await readDb();
-  const items = db.data.conversations.filter(c => c.userId === user.id)
-    .sort((a,b) => b.updatedAt.localeCompare(a.updatedAt))
-    .map(c => ({ id:c.id, title:c.title, provider:c.provider, updatedAt:c.updatedAt }));
-  res.json({ conversations: items });
-});
-app.get("/api/conversations/:id", authRequired, async (req, res) => {
-  const user = await currentUser(req); await readDb();
-  const c = db.data.conversations.find(x => x.id === req.params.id && x.userId === user?.id);
-  if (!c) return res.status(404).json({ error: "চ্যাট পাওয়া যায়নি।" });
-  res.json({ conversation: c });
-});
-app.delete("/api/conversations/:id", authRequired, async (req, res) => {
-  const user = await currentUser(req); await readDb();
-  const before = db.data.conversations.length;
-  db.data.conversations = db.data.conversations.filter(x => !(x.id === req.params.id && x.userId === user?.id));
-  await writeDb();
-  res.json({ deleted: before !== db.data.conversations.length });
+  const list = db.data.conversations.filter(c => c.userId === req.auth.sub).reverse();
+  res.json({ conversations: list });
 });
 
 app.post("/api/chat", authRequired, apiLimiter, async (req, res) => {
   try {
     const user = await currentUser(req);
-    if (!user) return res.status(401).json({ error: "লগইন প্রয়োজন।" });
-    const { message, conversationId, provider = "openai", model, mode = "chat" } = req.body || {};
-    if (typeof message !== "string" || !message.trim()) return res.status(400).json({ error: "একটি মেসেজ লিখুন।" });
-    if (message.length > 10000) return res.status(413).json({ error: "মেসেজ ১০,০০০ অক্ষরের মধ্যে রাখুন।" });
-    if (!["chat","writer","coding","study","summarize"].includes(mode)) return res.status(400).json({ error: "অজানা AI mode।" });
-    if (!["openai","gemini"].includes(provider)) return res.status(400).json({ error: "অজানা AI provider।" });
-    if (!providerAvailable(provider)) return res.status(503).json({ error: `${provider} API Key অ্যাডমিনকে সেট করতে হবে।` });
+    if (!user) return res.status(401).json({ error: "ইউজার পাওয়া যায়নি।" });
+    const { message, mode = "chat", provider = "gemini", model, conversationId } = req.body || {};
+    if (typeof message !== "string" || !message.trim()) return res.status(400).json({ error: "বার্তা লিখুন।" });
     const usage = await usageFor(user.id);
-    if (usage.chats >= CHAT_LIMIT) return res.status(429).json({ error: `আজকের ফ্রি Chat limit (${CHAT_LIMIT}) শেষ। আগামী UTC দিনে আবার চেষ্টা করুন।` });
-
-    // Count the request before calling the provider so repeated failed requests cannot bypass free limits.
-    usage.chats += 1;
-    await writeDb();
-    let convo = conversationId ? db.data.conversations.find(c => c.id === conversationId && c.userId === user.id) : null;
-    if (conversationId && !convo) return res.status(404).json({ error: "এই চ্যাটটি পাওয়া যায়নি।" });
-    if (!convo) {
-      convo = { id: randomUUID(), userId: user.id, title: message.trim().slice(0, 55), provider, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), messages: [] };
-      db.data.conversations.push(convo);
+    if (user.role !== "admin" && usage.chats >= CHAT_LIMIT) {
+      return res.status(429).json({ error: "আজকের ফ্রি চ্যাট লিমিট শেষ হয়েছে।" });
     }
-    const prior = convo.messages.slice(-12).map(m => ({ role: m.role, content: m.content }));
-    const answer = await generateText({ provider, model: typeof model === "string" ? model.slice(0,100) : undefined, mode, message: message.trim(), history: prior });
-    const now = new Date().toISOString();
-    convo.provider = provider;
-    convo.messages.push({ role: "user", content: message.trim(), createdAt: now }, { role: "assistant", content: answer, createdAt: now });
-    convo.updatedAt = now;
-    await writeDb();
-    res.json({ answer, conversationId: convo.id, usage: { chats: usage.chats, limit: CHAT_LIMIT } });
-  } catch (e) {
-    console.error("Chat error:", e?.status, e?.message);
-    res.status(500).json({ error: e.message?.includes("API Key") ? e.message : "AI উত্তর তৈরি করা যায়নি। Provider settings, API quota ও model access পরীক্ষা করুন।" });
-  }
-});
-
-app.post("/api/image", authRequired, apiLimiter, async (req, res) => {
-  try {
-    const user = await currentUser(req);
-    if (!user) return res.status(401).json({ error: "লগইন প্রয়োজন।" });
-    const { prompt } = req.body || {};
-    if (typeof prompt !== "string" || !prompt.trim()) return res.status(400).json({ error: "ছবির বর্ণনা লিখুন।" });
-    if (prompt.length > 3500) return res.status(413).json({ error: "Prompt ৩,৫০০ অক্ষরের মধ্যে রাখুন।" });
-    if (!openai) return res.status(503).json({ error: "Image Generator চালাতে OpenAI API Key প্রয়োজন।" });
-    const usage = await usageFor(user.id);
-    if (usage.images >= IMAGE_LIMIT) return res.status(429).json({ error: `আজকের ফ্রি Image limit (${IMAGE_LIMIT}) শেষ।` });
-    const result = await openai.images.generate({
-      model: process.env.OPENAI_IMAGE_MODEL || "gpt-image-2.5-sunburst",
-      prompt: prompt.trim(),
-      size: "1024x1024"
-    });
-    const b64 = result.data?.[0]?.b64_json;
-    if (!b64) return res.status(502).json({ error: "Image API থেকে ছবি পাওয়া যায়নি।" });
-    usage.images += 1;
-    await writeDb();
-    res.json({ image: `data:image/png;base64,${b64}`, usage: { images: usage.images, limit: IMAGE_LIMIT } });
-  } catch (e) {
-    console.error("Image error:", e?.status, e?.message);
-    res.status(500).json({ error: "ছবি তৈরি হয়নি। OpenAI image model access ও billing পরীক্ষা করুন।" });
-  }
-});
-
-app.get("/api/admin/overview", authRequired, async (req, res) => {
-  const user = await currentUser(req);
-  if (!user || user.role !== "admin") return res.status(403).json({ error: "শুধু Admin ব্যবহার করতে পারবেন।" });
-  await readDb();
-  res.json({
-    users: db.data.users.map(safeUser),
-    totalConversations: db.data.conversations.length,
-    providers: { openai: Boolean(openai), gemini: Boolean(process.env.GEMINI_API_KEY) }
-  });
-});
-
-app.get("*", (req, res) => res.sendFile(path.join(__dirname, "public", "index.html")));
-app.listen(PORT, () => {
-  console.log(`AI Smart Hub V2 running at http://localhost:${PORT}`);
-  console.log(`Providers: OpenAI=${Boolean(openai)} | Gemini=${Boolean(process.env.GEMINI_API_KEY)}`);
-});
+    await readDb();
+    let conv = conversationId ? db.data.conversations.find(c => c.id === conversationId && c.userId === user.id) : null;
+    if (!conv) {
