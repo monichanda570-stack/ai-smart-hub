@@ -29,7 +29,6 @@ if (JWT_SECRET.length < 32)
   console.error("SECURITY ERROR: Set JWT_SECRET in .env to a random secret at least 32 characters long.");
   process.exit(1);
 }
-
 const adapter = new JSONFile(path.join(__dirname, "data", "db.json"));
 const db = new Low(adapter, { users: [], conversations: [], usage: [] });
 await db.read();
