@@ -191,8 +191,8 @@ app.get("/api/conversations", authRequired, async (req, res) => {
   res.json({ conversations: list });
 });
 
-app.post("/api/chat", authRequired, apiLimiter, async (req, res) => {
-  try {
+app.post("/api/chat", authRequired, apiLimiter, async (req, res) => {{
+  try {{
     const user = await currentUser(req);
     if (!user) return res.status(401).json({ error: "ইউজার পাওয়া যায়নি।" });
     const { message, mode = "chat", provider = "gemini", model, conversationId } = req.body || {};
@@ -216,7 +216,7 @@ app.post("/api/chat", authRequired, apiLimiter, async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: e.message || "উত্তর তৈরি করা যায়নি।" });
-  }
+  }}
 });
 
 app.listen(PORT, "0.0.0.0", () => {
