@@ -204,3 +204,21 @@ app.post("/api/chat", authRequired, apiLimiter, async (req, res) => {
     await readDb();
     let conv = conversationId ? db.data.conversations.find(c => c.id === conversationId && c.userId === user.id) : null;
     if (!conv) {
+      conv = { id: randomUUID(), userId: user.id, title: message.slice(0, 40), mode, messages: [], updatedAt: new Date().toISOString() };
+      db.data.conversations.push(conv);
+    }
+    const reply = await generateText({ provider, model, mode, message: message.trim(), history: conv.messages });
+    conv.messages.push({ role: "user", content: message.trim() }, { role: "assistant", content: reply });
+    conv.updatedAt = new Date().toISOString();
+    usage.chats += 1;
+    await writeDb();
+    res.json({ reply, conversation: conv, usage });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: e.message || "উত্তর তৈরি করা যায়নি।" });
+  }
+});
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`AI Smart Hub running on port ${PORT}`);
+});
