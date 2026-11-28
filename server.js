@@ -128,7 +128,8 @@ async function generateText({ provider, model, mode, message, history }) {
       console.error("Gemini API error:", response.status, payload?.error?.message);
       throw new Error("Gemini API অনুরোধ ব্যর্থ হয়েছে। API key ও model পরীক্ষা করুন।");
     }
-    return payload?.candidates?.[0]?.content?.parts?.[0]?.text || "দুঃখিত, কোনো উত্তর পাওয়া যায়নি।";
+   return payload?.candidates?.[0]?.content?.parts?.[0]?.text || "দুঃখিত, কোনো উত্তর পাওয়া যায়নি।";
+
   }
   throw new Error("অজানা AI provider।");
 }
